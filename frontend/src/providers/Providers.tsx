@@ -7,12 +7,15 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import { store } from '@/store';
 import { queryClient } from '@/lib/queryClient';
-
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='light'
+          enableSystem={false}
+        >
           {children}
           <Toaster richColors position='top-right' />
         </ThemeProvider>
