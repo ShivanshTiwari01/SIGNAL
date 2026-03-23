@@ -23,15 +23,17 @@ export const signup = async (req: Request, res: Response) => {
     }
 
     if (event.type === 'user.created') {
-      const user = event.data;
+      const clerkUser = event.data;
 
-      console.log('Clerk user created:', user);
+      console.log('Clerk user created:', clerkUser);
 
       const existingUser = await user.findUnique({
         where: {
-          clerkId: user.id,
+          userClerkId: clerkUser.id,
         },
       });
+
+      console.log('Existing user found:', existingUser);
 
       if (existingUser) {
         return res.status(200).json({
@@ -40,14 +42,14 @@ export const signup = async (req: Request, res: Response) => {
         });
       }
 
-      await user.create({
+      const newUser = await user.create({
         data: {
-          clerkId: user.id,
-          email: user.emailAddresses[0].emailAddress,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          userClerkId: clerkUser.id,
+          email: clerkUser.email_addresses[0].email_address,
         },
       });
+
+      console.log('User created in database:', newUser);
 
       return res.status(201).json({
         success: true,
