@@ -5,6 +5,7 @@ import compression from 'compression';
 import { rateLimit } from 'express-rate-limit';
 import pino from 'pino';
 import { clerkMiddleware } from '@clerk/express';
+import router from './routes';
 
 const app = express();
 
@@ -17,6 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
 app.use(clerkMiddleware());
+
+app.use('/api', router);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
