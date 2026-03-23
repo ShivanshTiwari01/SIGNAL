@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "mobile" DROP NOT NULL,
+ALTER COLUMN "username" DROP NOT NULL,
+ALTER COLUMN "password" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "UserProfile" ADD COLUMN     "age" INTEGER,
+ADD COLUMN     "dob" TIMESTAMP(3);
