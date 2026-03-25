@@ -23,8 +23,10 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  userProfile UserProfile?
-  sessions    Session[]
+  userProfile   UserProfile?
+  sessions      Session[]
+  conversations Conversations[]
+  apiUsages     ApiUsage[]
 }
 
 model UserProfile {
@@ -53,4 +55,72 @@ model Session {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Conversations {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  model        String?
+  systemPrompt String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  messages  Messages[]
+  apiUsages ApiUsage[]
+}
+
+model Messages {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String
+  content        String
+  tokenCount     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  conversation    Conversations     @relation(fields: [conversationId], references: [id])
+  messageMetadata MessageMetadata[]
+  attachments     Attachment[]
+}
+
+model MessageMetadata {
+  id           String   @id @default(uuid())
+  messageId    String
+  latencyMs    Int
+  modelUsed    String
+  finishReason String?
+  promptTokens Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  message Messages @relation(fields: [messageId], references: [id])
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  messageId String
+  fileName  String
+  fileType  String
+  fileSize  Int
+  fileUrl   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  message Messages @relation(fields: [messageId], references: [id])
+}
+
+model ApiUsage {
+  id             String   @id @default(uuid())
+  userId         String
+  conversationId String
+  model          String
+  tokensUsed     Int
+  cost           Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  conversation Conversations @relation(fields: [conversationId], references: [id])
 }
