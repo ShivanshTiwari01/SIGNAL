@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { HERO_CONTENT } from '../constants';
 
-export function HeroSection() {
+export default function HeroSection() {
   return (
     <section className='flex flex-col items-center text-center py-24'>
       <h1 className='text-5xl font-bold'>{HERO_CONTENT.heading}</h1>

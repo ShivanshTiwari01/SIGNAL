@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
-import { ui } from '@clerk/ui';
 import { Geist, Geist_Mono, Manrope } from 'next/font/google';
 import './globals.css';
 import Providers from '@/providers/Providers';
@@ -39,7 +38,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className='min-h-full flex flex-col'>
-        <ClerkProvider ui={ui}>
+        <ClerkProvider>
           <Providers>{children}</Providers>
         </ClerkProvider>
       </body>
