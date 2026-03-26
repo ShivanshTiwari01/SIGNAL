@@ -4,8 +4,9 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { rateLimit } from 'express-rate-limit';
 import pino from 'pino';
-import pinoHttp from 'pino-http';
+import chalk from 'chalk';
 import { clerkMiddleware } from '@clerk/express';
+
 import router from './routes';
 
 const app = express();
@@ -38,7 +39,12 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-app.use(pinoHttp({ logger }));
+
+app.use((req, res, next) => {
+  logger.info(`${chalk.yellow(req.method)} ${chalk.green(req.url)}`);
+  next();
+});
+
 app.use(clerkMiddleware());
 
 app.get('/', (req, res) => {

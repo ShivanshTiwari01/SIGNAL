@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Webhook } from 'svix';
 import prisma from '../../config/db';
+import { logger } from '../../app';
 
 const user = prisma.user;
 
@@ -25,15 +26,11 @@ export const signup = async (req: Request, res: Response) => {
     if (event.type === 'user.created') {
       const clerkUser = event.data;
 
-      console.log('Clerk user created:', clerkUser);
-
       const existingUser = await user.findUnique({
         where: {
           userClerkId: clerkUser.id,
         },
       });
-
-      console.log('Existing user found:', existingUser);
 
       if (existingUser) {
         return res.status(200).json({
@@ -49,14 +46,13 @@ export const signup = async (req: Request, res: Response) => {
         },
       });
 
-      console.log('User created in database:', newUser);
-
       return res.status(201).json({
         success: true,
         message: 'User created successfully',
       });
     }
   } catch (error) {
+    logger.error({ 'Error processing webhook:': error });
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
