@@ -1,4 +1,4 @@
-export function Navbar() {
+export default function Navbar() {
   return (
     <nav className='flex items-center justify-between p-4 bg-background text-white'>
       <span className='font-bold text-xl text-primary'>FLUX AI</span>
