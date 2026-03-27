@@ -10,6 +10,6 @@ COPY . .
 
 RUN pnpm build
 
-EXPOSE 3120
+EXPOSE 5123
 
 CMD [ "pnpm", "start" ]
