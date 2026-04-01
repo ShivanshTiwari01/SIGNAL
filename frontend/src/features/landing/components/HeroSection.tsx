@@ -3,15 +3,6 @@ import { HERO_CONTENT } from '../constants';
 
 export default function HeroSection() {
   return (
-    <section className='flex flex-col items-center text-center py-24'>
-      <h1 className='text-5xl font-bold'>{HERO_CONTENT.heading}</h1>
-      <p className='mt-4 text-lg text-gray-600'>{HERO_CONTENT.subheading}</p>
-      <Link
-        href='/signup'
-        className='mt-8 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition'
-      >
-        Get Started
-      </Link>
-    </section>
+    <section className='relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-neural-gradient'></section>
   );
 }
