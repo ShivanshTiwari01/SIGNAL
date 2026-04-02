@@ -1,0 +1,31 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via ssh
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MY_VPS_IP }}
+          username: ${{ secrets.MY_VPS_USER}}
+          password: ${{ secrets.MY_VPS_PASSWORD}}
+          script: |
+            cd ~/projects/FLUX_AI
+
+            echo "Pull latest code"
+            git fetch origin
+            git reset --hard origin/production
+
+            echo "Rebuild containers"
+            docker compose down
+            docker compose up --build -d

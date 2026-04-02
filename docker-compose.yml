@@ -1,0 +1,30 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: app-frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3001
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: app-backend
+    ports:
+      - '3001:3001'
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
+
+  redis:
+    image: redis:7-alpine
+    container_name: app-redis
+    ports:
+      - '6379:6379'
