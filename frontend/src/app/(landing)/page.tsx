@@ -1,8 +1,12 @@
 import {
+  CTASection,
+  ExperienceSection,
   FeaturesSection,
   HeroSection,
   LogoBar,
   Navbar,
+  PricingSection,
+  TestimonialsSection,
 } from '@/features/landing/components';
 
 export default function LandingPage() {
@@ -13,6 +17,10 @@ export default function LandingPage() {
         <HeroSection />
         <LogoBar />
         <FeaturesSection />
+        <ExperienceSection />
+        <PricingSection />
+        <TestimonialsSection />
+        <CTASection />
       </main>
     </>
   );
