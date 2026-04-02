@@ -2,7 +2,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: frontend/Dockerfile
     container_name: app-frontend
     ports:
       - '3000:3000'
@@ -14,7 +14,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/server/Dockerfile
+      dockerfile: backend/Dockerfile
     container_name: app-backend
     ports:
       - '3001:3001'
