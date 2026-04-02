@@ -8,6 +8,8 @@ RUN npm install -g pnpm && pnpm install
 
 COPY . .
 
+RUN pnpm prisma generate
+
 RUN pnpm build
 
 EXPOSE 3120
