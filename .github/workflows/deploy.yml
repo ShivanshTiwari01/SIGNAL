@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.MY_VPS_USER}}
           password: ${{ secrets.MY_VPS_PASSWORD}}
           script: |
-            cd ~/projects/FLUX_AI
+            cd ~/projects/SIGNAL
 
             echo "Pull latest code"
             git fetch origin

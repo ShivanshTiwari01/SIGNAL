@@ -1,6 +1,6 @@
-# FLUX AI -- Backend
+# SIGNAL -- Backend
 
-REST API server for the FLUX AI platform. Built with Express 5, TypeScript, Prisma ORM, PostgreSQL, and Redis.
+REST API server for the SIGNAL AI platform. Built with Express 5, TypeScript, Prisma ORM, PostgreSQL, and Redis.
 
 ---
 
@@ -202,8 +202,8 @@ backend/
 Build and run the container:
 
 ```bash
-docker build -t flux-ai-backend .
-docker run -p 3120:3120 --env-file .env flux-ai-backend
+docker build -t signal-backend .
+docker run -p 3120:3120 --env-file .env signal-backend
 ```
 
 The Dockerfile uses `node:24-alpine`, installs dependencies with pnpm, compiles TypeScript, and exposes port `3120`.

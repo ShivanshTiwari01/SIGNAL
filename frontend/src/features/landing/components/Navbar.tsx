@@ -31,7 +31,7 @@ export default function Navbar() {
             </svg>
           </div>
           <span className='text-foreground font-bold text-sm tracking-wide'>
-            Flux AI
+            SIGNAL
           </span>
         </Link>
 
