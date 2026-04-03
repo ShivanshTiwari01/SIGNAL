@@ -31,7 +31,7 @@ export default function HeroSection() {
 
       <p className='relative text-muted-foreground text-lg max-w-xl mb-10 leading-relaxed'>
         Precision-engineered AI signals for the modern markets. Bridge the gap
-        between data and execution with Flux AI.
+        between data and execution with Signal AI.
       </p>
 
       <div className='relative flex items-center gap-4'>

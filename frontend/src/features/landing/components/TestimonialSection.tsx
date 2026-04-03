@@ -5,14 +5,14 @@ const testimonials = [
     name: 'James Whitfield',
     role: 'Hedge Fund Manager',
     quote:
-      'Flux AI completely changed how we approach signal generation. Our alpha has improved meaningfully since we started using their real-time feeds.',
+      'Signal AI completely changed how we approach signal generation. Our alpha has improved meaningfully since we started using their real-time feeds.',
     rating: 5,
   },
   {
     name: 'Priya Anand',
     role: 'Retail Options Trader',
     quote:
-      "I've tried every trading tool out there. Nothing comes close to the clarity and precision of Flux AI's insights. It's like having a quant on staff 24/7.",
+      "I've tried every trading tool out there. Nothing comes close to the clarity and precision of Signal AI's insights. It's like having a quant on staff 24/7.",
     rating: 5,
   },
   {

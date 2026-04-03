@@ -17,7 +17,7 @@ export default function CTASection() {
           <span className='text-gradient'>ahead of the curve.</span>
         </h2>
         <p className='text-muted-foreground text-sm max-w-md mx-auto mb-10 leading-relaxed'>
-          Get early access to Flux AI and start trading with intelligence that
+          Get early access to SIGNAL and start trading with intelligence that
           compounds.
         </p>
         <button className='btn-primary text-sm px-8 py-4'>
@@ -28,7 +28,7 @@ export default function CTASection() {
       {/* Footer strip */}
       <div className='relative max-w-5xl mx-auto mt-24 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4'>
         <p className='text-muted-foreground/40 text-xs'>
-          © 2025 Flux AI. All rights reserved.
+          © 2026 Signal. All rights reserved.
         </p>
         <div className='flex gap-6'>
           {['Privacy', 'Terms', 'Contact'].map((l) => (

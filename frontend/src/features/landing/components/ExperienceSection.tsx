@@ -17,11 +17,11 @@ export default function ExperienceSection() {
           <h2 className='text-foreground text-3xl md:text-4xl font-bold leading-tight mb-6'>
             The market never sleeps.{' '}
             <span className='text-muted-foreground font-normal'>
-              Neither does Flux AI.
+              Neither does Signal AI.
             </span>
           </h2>
           <p className='text-muted-foreground text-sm leading-relaxed mb-8 max-w-md'>
-            Built on a continuously learning model, Flux AI adapts to shifting
+            Built on a continuously learning model, Signal AI adapts to shifting
             market conditions in real-time — so your strategy is always ahead of
             the curve.
           </p>

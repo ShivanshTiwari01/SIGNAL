@@ -21,9 +21,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'Flux AI — AI Trading Platform',
+  title: 'Signal — AI Trading Platform',
   description:
-    'Flux AI is an AI-powered trading platform that helps you make smarter trading decisions with intelligent automation and real-time insights.',
+    'Signal is an AI-powered trading platform that helps you make smarter trading decisions with intelligent automation and real-time insights.',
 };
 
 export default function RootLayout({

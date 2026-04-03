@@ -1,6 +1,6 @@
-# FLUX AI -- Frontend
+# SIGNAL -- Frontend
 
-Web client for the FLUX AI trading platform. Built with Next.js 16, React 19, TypeScript, Tailwind CSS 4, and Clerk authentication.
+Web client for the SIGNAL AI trading platform. Built with Next.js 16, React 19, TypeScript, Tailwind CSS 4, and Clerk authentication.
 
 ---
 
@@ -191,8 +191,8 @@ Authentication is handled by Clerk:
 Build and run the container:
 
 ```bash
-docker build -t flux-ai-frontend .
-docker run -p 5123:5123 --env-file .env.local flux-ai-frontend
+docker build -t signal-frontend .
+docker run -p 5123:5123 --env-file .env.local signal-frontend
 ```
 
 The Dockerfile uses `node:24-alpine`, installs dependencies with pnpm, builds the Next.js production bundle, and exposes port `5123`.
