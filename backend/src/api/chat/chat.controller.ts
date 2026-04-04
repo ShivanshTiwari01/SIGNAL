@@ -20,6 +20,12 @@ export const conversation = async (req: Request, res: Response) => {
       });
     }
 
+    let base64Image: string | null = null;
+
+    if (req.file) {
+      base64Image = req.file.buffer.toString('base64');
+    }
+
     let conversation: any = null;
 
     if (conversationId && typeof conversationId === 'string') {
@@ -52,14 +58,29 @@ export const conversation = async (req: Request, res: Response) => {
     let response: any = null;
 
     try {
-      response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: text,
-      });
-
-      if (response) {
-        console.log(response.text);
+      if (base64Image) {
+        response = await ai.models.generateContent({
+          model: 'gemini-3-flash-preview',
+          contents: [
+            {
+              inlineData: {
+                mimeType: req.file ? req.file.mimetype : 'text/plain',
+                data: base64Image || Buffer.from(text).toString('base64'),
+              },
+            },
+            {
+              text: text,
+            },
+          ],
+        });
+      } else {
+        response = await ai.models.generateContent({
+          model: 'gemini-3-flash-preview',
+          contents: text,
+        });
       }
+
+      console.log('AI Response:', response);
     } catch (error) {
       console.error('Error generating content:', error);
       return res.status(400).json({
@@ -131,6 +152,39 @@ export const fetchConversation = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error in fetchConversation handler:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+export const fetchConversations = async (req: Request, res: Response) => {
+  try {
+    const conversationsList = await conversations.findMany({
+      where: {
+        userId: 'c8cf6335-6468-4572-a143-d4533bf37064',
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    if (!conversationsList) {
+      return res.status(404).json({
+        success: false,
+        message: 'No conversations found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: conversationsList,
+    });
+  } catch (error) {
+    console.error('Error in fetchConversations handler:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
