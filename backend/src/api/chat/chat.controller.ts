@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import prisma from '../../config/db';
+import uploadImageToCloudinary from '../../helpers/cloudinary';
 
 const user = prisma.user;
 const conversations = prisma.conversations;
@@ -23,6 +24,12 @@ export const conversation = async (req: Request, res: Response) => {
     let base64Image: string | null = null;
 
     if (req.file) {
+      const uploadImage = await uploadImageToCloudinary(req.file);
+
+      if (uploadImage) {
+        console.log('Image uploaded to Cloudinary:', uploadImage);
+      }
+
       base64Image = req.file.buffer.toString('base64');
     }
 
