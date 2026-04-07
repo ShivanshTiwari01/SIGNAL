@@ -6,6 +6,7 @@ import uploadImageToCloudinary from '../../helpers/cloudinary';
 const user = prisma.user;
 const conversations = prisma.conversations;
 const messages = prisma.messages;
+const attachment = prisma.attachment;
 
 export const conversation = async (req: Request, res: Response) => {
   try {
@@ -22,9 +23,10 @@ export const conversation = async (req: Request, res: Response) => {
     }
 
     let base64Image: string | null = null;
+    let uploadImage: string | null = null;
 
     if (req.file) {
-      const uploadImage = await uploadImageToCloudinary(req.file);
+      uploadImage = await uploadImageToCloudinary(req.file);
 
       if (uploadImage) {
         console.log('Image uploaded to Cloudinary:', uploadImage);
@@ -59,6 +61,18 @@ export const conversation = async (req: Request, res: Response) => {
         tokenCount: text.length,
       },
     });
+
+    if (req.file) {
+      await attachment.create({
+        data: {
+          messageId: message.id,
+          fileName: req.file.originalname,
+          fileType: req.file.mimetype,
+          fileSize: req.file.size,
+          fileUrl: uploadImage || '',
+        },
+      });
+    }
 
     const ai = new GoogleGenAI({});
 
