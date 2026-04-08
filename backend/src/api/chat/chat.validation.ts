@@ -1,6 +1,6 @@
-import Zod from 'zod';
+import * as z from 'zod';
 
-export const ConversationSchema = Zod.object({
-  conversationId: Zod.string().optional(),
-  text: Zod.string().min(10, 'Please provide more details'),
+export const ConversationSchema = z.object({
+  conversationId: z.string().optional(),
+  text: z.string().min(10, 'Please provide more details'),
 });
