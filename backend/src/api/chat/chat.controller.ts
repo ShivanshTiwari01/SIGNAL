@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { GoogleGenAI } from '@google/genai';
 import prisma from '../../config/db';
 import uploadImageToCloudinary from '../../helpers/cloudinary';
+import { generateContent } from './chat.helper';
 
 const user = prisma.user;
 const conversations = prisma.conversations;
@@ -20,19 +20,6 @@ export const conversation = async (req: Request, res: Response) => {
         success: false,
         message: 'text is required',
       });
-    }
-
-    let base64Image: string | null = null;
-    let uploadImage: string | null = null;
-
-    if (req.file) {
-      uploadImage = await uploadImageToCloudinary(req.file);
-
-      if (uploadImage) {
-        console.log('Image uploaded to Cloudinary:', uploadImage);
-      }
-
-      base64Image = req.file.buffer.toString('base64');
     }
 
     let conversation: any = null;
@@ -62,7 +49,14 @@ export const conversation = async (req: Request, res: Response) => {
       },
     });
 
+    let base64Image: string | undefined = undefined;
+    let uploadImage: string | null = null;
+
     if (req.file) {
+      uploadImage = await uploadImageToCloudinary(req.file);
+
+      base64Image = req.file.buffer.toString('base64');
+
       await attachment.create({
         data: {
           messageId: message.id,
@@ -74,54 +68,24 @@ export const conversation = async (req: Request, res: Response) => {
       });
     }
 
-    const ai = new GoogleGenAI({});
-
-    let response: any = null;
-
-    try {
-      if (base64Image) {
-        response = await ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
-          contents: [
-            {
-              inlineData: {
-                mimeType: req.file ? req.file.mimetype : 'text/plain',
-                data: base64Image || Buffer.from(text).toString('base64'),
-              },
-            },
-            {
-              text: text,
-            },
-          ],
-        });
-      } else {
-        response = await ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
-          contents: text,
-        });
-      }
-
-      console.log('AI Response:', response);
-    } catch (error) {
-      console.error('Error generating content:', error);
-      return res.status(400).json({
-        success: false,
-        message: 'Error generating content',
-      });
-    }
+    const aiReply: any = await generateContent(
+      text,
+      base64Image,
+      req.file?.mimetype,
+    );
 
     const aiMessage = await messages.create({
       data: {
-        content: response.text,
+        content: aiReply.text,
         role: 'ai',
         conversationId: conversation.id,
-        tokenCount: response.text.length,
+        tokenCount: aiReply.text.length,
       },
     });
 
     return res.status(200).json({
       success: true,
-      data: { text: response.text },
+      data: { text: aiReply.text },
     });
   } catch (error) {
     console.error('Error in conversation handler:', error);
@@ -153,6 +117,16 @@ export const fetchConversation = async (req: Request, res: Response) => {
         orderBy: { createdAt: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
+        include: {
+          attachments: {
+            select: {
+              id: true,
+              messageId: true,
+              fileName: true,
+              fileUrl: true,
+            },
+          },
+        },
       }),
       messages.count({
         where: {
