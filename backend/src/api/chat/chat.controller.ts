@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../../config/db';
+import { logger } from '../../app';
 import uploadImageToCloudinary from '../../helpers/cloudinary';
 import { generateContent } from './chat.helper';
 
@@ -10,7 +11,7 @@ const attachment = prisma.attachment;
 
 export const conversation = async (req: Request, res: Response) => {
   try {
-    const { conversationId } = req.params;
+    const { conversationId } = req.query;
     const { text } = req.body;
 
     const userId = 'c8cf6335-6468-4572-a143-d4533bf37064';
@@ -68,8 +69,21 @@ export const conversation = async (req: Request, res: Response) => {
       });
     }
 
+    const recentMessages = await messages.findMany({
+      where: {
+        conversationId: conversation.id,
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+      select: {
+        role: true,
+        content: true,
+      },
+    });
+
     const aiReply: any = await generateContent(
       text,
+      recentMessages,
       base64Image,
       req.file?.mimetype,
     );
@@ -88,7 +102,7 @@ export const conversation = async (req: Request, res: Response) => {
       data: { text: aiReply.text },
     });
   } catch (error) {
-    console.error('Error in conversation handler:', error);
+    logger.error(error, 'Error in create conversation handler');
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
@@ -146,7 +160,7 @@ export const fetchConversation = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error in fetchConversation handler:', error);
+    logger.error(error, 'Error in fetchConversation handler');
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
@@ -179,7 +193,7 @@ export const fetchConversations = async (req: Request, res: Response) => {
       data: conversationsList,
     });
   } catch (error) {
-    console.error('Error in fetchConversations handler:', error);
+    logger.error(error, 'Error in fetchConversations handler:');
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
