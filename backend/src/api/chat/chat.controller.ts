@@ -97,59 +97,6 @@ export const conversation = async (req: Request, res: Response) => {
       await redisClient.set('stockData', JSON.stringify(stockData));
     }
 
-    // let stockData = [
-    //   {
-    //     symbol: 'RELIANCE',
-    //     price: 1329.4,
-    //     sma20: 1375.1249999999995,
-    //     sma50: 1400.0420000000001,
-    //     rsi: 38.65674166807646,
-    //     rsiSignal: 'neutral',
-    //     priceChange: -1.3615284733815551,
-    //     trend: 'downtrend',
-    //   },
-    //   {
-    //     symbol: 'HDFCBANK',
-    //     price: 797.25,
-    //     sma20: 793.5275000000001,
-    //     sma50: 866.2060000000002,
-    //     rsi: 41.7093142272262,
-    //     rsiSignal: 'neutral',
-    //     priceChange: -2.3097659600539178,
-    //     trend: 'downtrend',
-    //   },
-    //   {
-    //     symbol: 'ICICIBANK',
-    //     price: 1280.75,
-    //     sma20: 1257.25,
-    //     sma50: 1332.61,
-    //     rsi: 48.59876965140122,
-    //     rsiSignal: 'neutral',
-    //     priceChange: -2.1768187893832347,
-    //     trend: 'downtrend',
-    //   },
-    //   {
-    //     symbol: 'BHARTIARTL',
-    //     price: 1858.8,
-    //     sma20: 1819.3350000000003,
-    //     sma50: 1908.4410000000003,
-    //     rsi: 55.120772946859894,
-    //     rsiSignal: 'neutral',
-    //     priceChange: -0.14772635706803472,
-    //     trend: 'downtrend',
-    //   },
-    //   {
-    //     symbol: 'INFY',
-    //     price: 1331.5,
-    //     sma20: 1277.4325,
-    //     sma50: 1375.995,
-    //     rsi: 67.78017241379314,
-    //     rsiSignal: 'neutral',
-    //     priceChange: -1.095636025998143,
-    //     trend: 'downtrend',
-    //   },
-    // ];
-
     console.log('stock data: ', stockData);
 
     if (text.toLowerCase().trim() === 'what should i buy today') {
