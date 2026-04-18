@@ -208,7 +208,7 @@ The recommended way to run all services together:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/signal.git
+git clone https://github.com/ShivanshTiwari01/signal.git
 cd signal
 
 # Create both .env files (see Environment Variables above)
