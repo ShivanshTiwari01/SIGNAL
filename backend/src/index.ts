@@ -4,7 +4,7 @@ import { logger } from './app';
 import prisma from './config/db';
 import redisClient from './config/redis';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 async function start() {
   await prisma.$connect();
