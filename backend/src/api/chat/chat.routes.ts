@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import * as controller from './chat.controller';
 import validate from '../../middleware/validate';
-import * as validation from './chat.validation';
+import { ConversationSchema } from './chat.validation';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const upload = multer({
 router.post(
   '/conversation',
   upload.single('image'),
-  validate(validation.ConversationSchema),
+  validate(ConversationSchema),
   controller.conversation,
 );
 
