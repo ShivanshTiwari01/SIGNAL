@@ -5,9 +5,11 @@ import prisma from '../../config/db';
 import { subscriptionPlans } from '../../constants/subscriptionPlans';
 import razorpay from '../../config/razorpay';
 import { logger } from '../../app';
-import { Plan } from '../../generated/prisma/enums';
+import { PaymentStatus, Plan, Status } from '../../generated/prisma/enums';
 
 const user = prisma.user;
+const payment = prisma.payment;
+const subs = prisma.subscription;
 
 export const createRazorpayPlan = async (req: Request, res: Response) => {
   try {
@@ -64,6 +66,9 @@ export const subscription = async (req: Request, res: Response) => {
       customer_notify: 1, // Razorpay notifies customer via email
       total_count: 12, // number of billing cycles (12 months)
       quantity: 1,
+      notes: {
+        user_id: userId,
+      },
     });
 
     return res.status(201).json({
@@ -88,23 +93,17 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
     const { userId } = getAuth(req);
 
-    const planEntry = Object.entries(subscriptionPlans).find(
-      ([_, p]) => p.id === razorpay_subscription_id,
+    const planExists = Object.values(subscriptionPlans).find(
+      (p) => p.id === razorpay_subscription_id,
     );
 
-    if (planEntry) {
-      await user.update({
-        data: {
-          subscriptionId: razorpay_subscription_id,
-          plan: planEntry[0] as keyof typeof Plan,
-        },
-        where: {
-          userClerkId: userId as string,
-        },
+    if (!planExists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan does not exist',
       });
     }
 
-    // Generate expected signature
     const body = razorpay_payment_id + '|' + razorpay_subscription_id;
 
     const expectedSignature = crypto
@@ -113,13 +112,47 @@ export const verifyPayment = async (req: Request, res: Response) => {
       .digest('hex');
 
     if (expectedSignature === razorpay_signature) {
-      // Payment is legit — activate subscription in your DB here
+      const planEntry = Object.entries(subscriptionPlans).find(
+        ([_, p]) => p.id === razorpay_subscription_id,
+      );
+
+      if (planEntry) {
+        await user.update({
+          data: {
+            subscriptionId: razorpay_subscription_id,
+            plan: planEntry[0] as keyof typeof Plan,
+          },
+          where: {
+            userClerkId: userId as string,
+          },
+        });
+      }
+
+      await payment.create({
+        data: {
+          userId: userId as string,
+          razorpay_payment_id,
+          amount: planExists.price,
+          currency: 'INR',
+          status: PaymentStatus.Succeeded,
+        },
+      });
+
       res.status(200).json({
         success: true,
         message: 'Subscription activated!',
       });
     } else {
-      // Tampered payment
+      await payment.create({
+        data: {
+          userId: userId as string,
+          razorpay_payment_id,
+          amount: planExists.price,
+          currency: 'INR',
+          status: PaymentStatus.Failed,
+        },
+      });
+
       return res.status(400).json({
         success: false,
         message: 'Invalid signature',
@@ -133,7 +166,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
   }
 };
 
-export const razorpayWebhook = (req: Request, res: Response) => {
+export const razorpayWebhook = async (req: Request, res: Response) => {
   const webhookSecret: any = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature = req.headers['x-razorpay-signature'];
 
@@ -145,18 +178,55 @@ export const razorpayWebhook = (req: Request, res: Response) => {
   if (signature === expectedSignature) {
     const event = JSON.parse(req.body);
 
+    const notes = event.payload?.subscription?.entity?.notes;
+    const userId = notes?.user_id;
+    const subscriptionId = event.payload?.subscription?.entity?.id;
+
+    const subscriptionEntity = event.payload?.subscription?.entity;
+
+    const currentPeriodStart = new Date(
+      subscriptionEntity?.current_start * 1000,
+    );
+    const currentPeriodEnd = new Date(subscriptionEntity?.current_end * 1000);
+
     switch (event.event) {
       case 'subscription.activated':
-        // Activate user access in DB
+        await subs.create({
+          data: {
+            userId: userId as string,
+            subscriptionId: subscriptionId,
+            status: Status.Active,
+            currentPeriodStart,
+            currentPeriodEnd,
+          },
+        });
         break;
       case 'subscription.charged':
-        // Renewal successful
+        await subs.update({
+          where: { subscriptionId: subscriptionId },
+          data: {
+            status: Status.Active,
+            currentPeriodStart,
+            currentPeriodEnd,
+          },
+        });
         break;
       case 'subscription.cancelled':
-        // Revoke user access
+        await subs.update({
+          where: { subscriptionId: subscriptionId },
+          data: {
+            status: Status.Canceled,
+            cancelAtPeriodEnd: true,
+          },
+        });
         break;
       case 'payment.failed':
-        // Notify user
+        await subs.update({
+          where: { subscriptionId: subscriptionId },
+          data: {
+            status: Status.PastDue,
+          },
+        });
         break;
     }
 
