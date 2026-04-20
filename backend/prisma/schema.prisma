@@ -13,9 +13,9 @@ datasource db {
 }
 
 enum Plan {
-  Free
-  Pro
-  Institutional
+  FREE
+  TRADER
+  PROTRADER
 }
 
 model User {
@@ -26,15 +26,13 @@ model User {
   username         String?   @unique
   password         String?
   isEmailVerified  Boolean   @default(false)
-  plan             Plan      @default(Free)
-  stripeCustomerId String?   @unique
+  plan             Plan      @default(FREE)
   subscriptionId   String?   @unique
   currentPeriodEnd DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   userProfile   UserProfile?
-  sessions      Session[]
   conversations Conversations[]
   apiUsages     ApiUsage[]
   subscriptions Subscription[]
@@ -61,21 +59,6 @@ model UserProfile {
   @@map("user_profile")
 }
 
-model Session {
-  id         String  @id @default(uuid())
-  userId     String
-  token      String  @unique
-  deviceInfo String?
-  location   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@map("session")
-}
-
 enum Status {
   Active
   Inactive
@@ -84,16 +67,16 @@ enum Status {
 }
 
 model Subscription {
-  id                   String    @id @default(uuid())
-  userId               String
-  stripeSubscriptionId String    @unique
-  stripePriceId        String
-  status               Status
-  currentPeriodStart   DateTime
-  currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  userId             String
+  subscriptionId     String    @unique
+  razorpayId         String
+  status             Status
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 
