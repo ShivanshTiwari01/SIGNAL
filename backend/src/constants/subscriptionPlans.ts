@@ -1,20 +1,20 @@
 export const subscriptionPlans = {
   explorer: {
-    id: 'free',
-    name: 'free',
-    price: '0',
+    id: 'explorer',
+    name: 'explorer',
+    price: 0,
     features: ['basic'],
   },
   trader: {
     id: 'trader',
     name: 'trader',
-    price: '20',
+    price: 1999,
     features: ['basic', 'trader'],
   },
   proTrader: {
     id: 'protrader',
     name: 'protrader',
-    price: '200',
+    price: 19900,
     features: ['all'],
   },
 };
