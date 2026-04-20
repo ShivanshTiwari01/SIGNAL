@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
+import crypto from 'crypto';
 import prisma from '../../config/db';
 import { subscriptionPlans } from '../../constants/subscriptionPlans';
 import razorpay from '../../config/razorpay';
 import { logger } from '../../app';
+import { Plan } from '../../generated/prisma/enums';
 
 const user = prisma.user;
 
@@ -76,13 +78,90 @@ export const subscription = async (req: Request, res: Response) => {
   }
 };
 
-export const subscriptionCancel = async (req: Request, res: Response) => {
+export const verifyPayment = async (req: Request, res: Response) => {
   try {
+    const {
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature,
+    } = req.body;
+
     const { userId } = getAuth(req);
+
+    const planEntry = Object.entries(subscriptionPlans).find(
+      ([_, p]) => p.id === razorpay_subscription_id,
+    );
+
+    if (planEntry) {
+      await user.update({
+        data: {
+          subscriptionId: razorpay_subscription_id,
+          plan: planEntry[0] as keyof typeof Plan,
+        },
+        where: {
+          userClerkId: userId as string,
+        },
+      });
+    }
+
+    // Generate expected signature
+    const body = razorpay_payment_id + '|' + razorpay_subscription_id;
+
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET as string)
+      .update(body)
+      .digest('hex');
+
+    if (expectedSignature === razorpay_signature) {
+      // Payment is legit — activate subscription in your DB here
+      res.status(200).json({
+        success: true,
+        message: 'Subscription activated!',
+      });
+    } else {
+      // Tampered payment
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid signature',
+      });
+    }
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: 'Internal server error',
     });
+  }
+};
+
+export const razorpayWebhook = (req: Request, res: Response) => {
+  const webhookSecret: any = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const signature = req.headers['x-razorpay-signature'];
+
+  const expectedSignature = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(req.body)
+    .digest('hex');
+
+  if (signature === expectedSignature) {
+    const event = JSON.parse(req.body);
+
+    switch (event.event) {
+      case 'subscription.activated':
+        // Activate user access in DB
+        break;
+      case 'subscription.charged':
+        // Renewal successful
+        break;
+      case 'subscription.cancelled':
+        // Revoke user access
+        break;
+      case 'payment.failed':
+        // Notify user
+        break;
+    }
+
+    res.json({ received: true });
+  } else {
+    res.status(400).send('Invalid signature');
   }
 };

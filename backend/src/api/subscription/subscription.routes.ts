@@ -10,8 +10,8 @@ router.post('/create-plan', controller.createRazorpayPlan);
 
 router.post('/subscription-create', controller.subscription);
 
-router.post('/subscription-cancel', controller.subscriptionCancel);
+router.post('/verify-payment', controller.verifyPayment);
 
-// router.post('/subscription-webhook', controller.webhook);
+router.post('/subscription-webhook', controller.razorpayWebhook);
 
 export default router;
