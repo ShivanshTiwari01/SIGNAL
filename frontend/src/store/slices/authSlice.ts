@@ -4,6 +4,8 @@ interface User {
   id: string;
   email: string;
   name: string;
+  plan: 'FREE' | 'TRADER' | 'PROTRADER';
+  isProfileComplete: boolean;
 }
 
 interface AuthState {

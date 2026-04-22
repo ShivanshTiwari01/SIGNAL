@@ -5,14 +5,12 @@ const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  // attach token if needed
-  return config;
-});
-
-api.interceptors.response.use(
-  (res) => res,
-  (error) => Promise.reject(error),
-);
-
 export default api;
+
+export function setAuthToken(token: string | null) {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
+}
