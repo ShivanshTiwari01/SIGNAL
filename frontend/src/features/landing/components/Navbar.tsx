@@ -47,7 +47,14 @@ export default function Navbar() {
           ))}
         </div>
 
-        <button className='btn-primary px-4! py-2! test-sm'>Sign In</button>
+        <div className='flex items-center gap-3'>
+          <Link href='/sign-in' className='btn-outline px-4! py-2! text-sm'>
+            Sign In
+          </Link>
+          <Link href='/sign-in' className='btn-outline px-4! py-2! text-sm'>
+            Get Started
+          </Link>
+        </div>
       </div>
     </nav>
   );

@@ -9,7 +9,7 @@ const router = express.Router();
 router.post('/signup', controller.signup);
 
 router.patch(
-  'complete-profile',
+  '/complete-profile',
   requireAuth(),
   validate(completeProfileSchema),
   controller.completeProfile,
