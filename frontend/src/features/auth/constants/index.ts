@@ -8,6 +8,8 @@ export const signInSchema = z.object({
 export const signUpSchema = z.object({
   email: z.email('Enter a valid email address'),
   password: z.string().min(8, 'Password must be 8 characters long'),
+  firstName: z.string().min(3).max(15),
+  lastName: z.string().max(15),
 });
 
 export const verifyEmailSchema = z.object({
