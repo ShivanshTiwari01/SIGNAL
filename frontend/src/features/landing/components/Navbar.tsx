@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import SignalLogo from '@/components/common/SignalLogo';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { isSignedIn } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -38,12 +40,20 @@ export default function Navbar() {
         </div>
 
         <div className='flex items-center gap-3'>
-          <Link href='/sign-in' className='btn-outline px-4! py-2! text-sm'>
-            Sign In
-          </Link>
-          <Link href='/sign-up' className='btn-outline px-4! py-2! text-sm'>
-            Get Started
-          </Link>
+          {isSignedIn ? (
+            <Link href='/chat' className='btn-primary px-4! py-2! text-sm'>
+              Go to Chats
+            </Link>
+          ) : (
+            <>
+              <Link href='/sign-in' className='btn-outline px-4! py-2! text-sm'>
+                Sign In
+              </Link>
+              <Link href='/sign-up' className='btn-outline px-4! py-2! text-sm'>
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

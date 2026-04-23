@@ -1,7 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useAuth } from '@clerk/nextjs';
 import { HERO_CONTENT } from '../constants';
 
 export default function HeroSection() {
+  const { isSignedIn } = useAuth();
   return (
     <section className='relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-neural-gradient'>
       <div className='absolute inset-0 pointer-events-none'>
@@ -35,8 +39,18 @@ export default function HeroSection() {
       </p>
 
       <div className='relative flex items-center gap-4'>
-        <button className='btn-primary'>Get Started Free</button>
-        <button className='btn-secondary'>View Demo</button>
+        {isSignedIn ? (
+          <Link href='/chat' className='btn-primary'>
+            Go to Chats
+          </Link>
+        ) : (
+          <>
+            <Link href='/sign-up' className='btn-primary'>
+              Get Started Free
+            </Link>
+            <button className='btn-secondary'>View Demo</button>
+          </>
+        )}
       </div>
     </section>
   );
