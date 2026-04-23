@@ -11,9 +11,10 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import SignalLogo from '@/components/common/SignalLogo';
 
 export default function SignInForm() {
-  const { signIn, isLoaded, setActive } = useSignIn() as any; // eslint-disable-line
+  const { signIn, fetchStatus } = useSignIn();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -26,24 +27,37 @@ export default function SignInForm() {
   });
 
   async function onSubmit(values: SignInFormValues) {
-    if (!isLoaded) return;
+    if (fetchStatus === 'fetching') return;
 
-    try {
-      const result = await signIn.create({
-        identifier: values.email,
-        password: values.password,
-      });
+    const { error: createError } = await signIn.create({
+      identifier: values.email,
+    });
 
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
+    if (createError) {
+      toast.error(
+        AUTH_ERRORS[createError.code] ??
+          'Something went wrong. Please try again.',
+      );
+      return;
+    }
+
+    const { error: passwordError } = await signIn.password({
+      password: values.password,
+    });
+
+    if (passwordError) {
+      toast.error(
+        AUTH_ERRORS[passwordError.code] ??
+          'Something went wrong. Please try again.',
+      );
+      return;
+    }
+
+    if (signIn.status === 'complete') {
+      const { error: finalizeError } = await signIn.finalize();
+      if (!finalizeError) {
         router.push('/chat');
       }
-      //eslint-disable-next-line
-    } catch (error: any) {
-      const code = error.errors?.[0].code ?? '';
-      toast.error(
-        AUTH_ERRORS[code] ?? 'Something went wrong. Please try again. ',
-      );
     }
   }
   const inputBase =
@@ -51,19 +65,8 @@ export default function SignInForm() {
 
   return (
     <div className='w-full max-w-sm'>
-      <div className='flex items-center justify-center gap-2 mb-8'>
-        <div className='w-8 h-8 rounded-md bg-primary flex items-center justify-center glow-blue'>
-          <svg width='16' height='16' viewBox='0 0 14 14' fill='none'>
-            <path
-              d='M7 1L13 4V10L7 13L1 10V4L7 1Z'
-              fill='white'
-              fillOpacity='0.9'
-            />
-          </svg>
-        </div>
-        <span className='text-foreground font-bold text-base tracking-wide'>
-          SIGNAL
-        </span>
+      <div className='flex items-center justify-center mb-8'>
+        <SignalLogo iconSize={32} />
       </div>
 
       <div className='card-neural'>
