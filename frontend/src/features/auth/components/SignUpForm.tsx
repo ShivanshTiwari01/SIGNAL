@@ -9,13 +9,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import SignalLogo from '@/components/common/SignalLogo';
 import { signUpSchema, verifyEmailSchema, AUTH_ERRORS } from '../constants';
 import type { SignUpFormValues, VerifyEmailFormValues } from '../types';
 
 type Step = 'register' | 'verify';
 
 export default function SignUpForm() {
-  const { signUp, isLoaded, setActive } = useSignUp() as any; // eslint-disable-line
+  const { signUp, fetchStatus } = useSignUp();
   const router = useRouter();
   const [step, setStep] = useState<Step>('register');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +24,7 @@ export default function SignUpForm() {
 
   const registerForm = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
+    mode: 'onBlur',
   });
 
   const verifyForm = useForm<VerifyEmailFormValues>({
@@ -30,44 +32,67 @@ export default function SignUpForm() {
   });
 
   async function onRegister(values: SignUpFormValues) {
-    if (!isLoaded) return;
+    if (fetchStatus === 'fetching') return;
 
-    try {
-      await signUp.create({
-        firstName: values.firstName,
-        lastName: values.lastName,
-        emailAddress: values.email,
-        password: values.password,
-      });
+    const { error: createError } = await signUp.create({
+      firstName: values.firstName,
+      lastName: values.lastName,
+      emailAddress: values.email,
+    });
 
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      setRegisteredEmail(values.email);
-      setStep('verify');
-      //eslint-disable-next-line
-    } catch (err: any) {
-      const code = err?.errors?.[0]?.code ?? '';
+    if (createError) {
       toast.error(
-        AUTH_ERRORS[code] ?? 'Something went wrong. Please try again.',
+        AUTH_ERRORS[createError.code] ??
+          'Something went wrong. Please try again.',
       );
+      return;
     }
+
+    const { error: passwordError } = await signUp.password({
+      password: values.password,
+    });
+
+    if (passwordError) {
+      toast.error(
+        AUTH_ERRORS[passwordError.code] ??
+          'Something went wrong. Please try again.',
+      );
+      return;
+    }
+
+    const { error: sendError } = await signUp.verifications.sendEmailCode();
+
+    if (sendError) {
+      toast.error(
+        AUTH_ERRORS[sendError.code] ??
+          'Something went wrong. Please try again.',
+      );
+      return;
+    }
+
+    setRegisteredEmail(values.email);
+    setStep('verify');
   }
 
   async function onVerify(values: VerifyEmailFormValues) {
-    if (!isLoaded) return;
+    if (fetchStatus === 'fetching') return;
 
-    try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: values.code,
-      });
+    const { error: verifyError } = await signUp.verifications.verifyEmailCode({
+      code: values.code,
+    });
 
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
+    if (verifyError) {
+      toast.error(
+        AUTH_ERRORS[verifyError.code] ?? 'Invalid code. Please try again.',
+      );
+      return;
+    }
+
+    if (signUp.status === 'complete') {
+      const { error: finalizeError } = await signUp.finalize();
+      if (!finalizeError) {
         router.push('/complete-profile');
       }
-      //eslint-disable-next-line
-    } catch (err: any) {
-      const code = err?.errors?.[0]?.code ?? '';
-      toast.error(AUTH_ERRORS[code] ?? 'Invalid code. Please try again.');
     }
   }
 
@@ -76,21 +101,9 @@ export default function SignUpForm() {
 
   return (
     <div className='w-full max-w-sm'>
-      <div className='flex items-center justify-center gap-2 mb-8'>
-        <div className='w-8 h-8 rounded-md bg-primary flex items-center justify-center glow-blue'>
-          <svg width='16' height='16' viewBox='0 0 14 14' fill='none'>
-            <path
-              d='M7 1L13 4V10L7 13L1 10V4L7 1Z'
-              fill='white'
-              fillOpacity='0.9'
-            />
-          </svg>
-        </div>
-        <span className='text-foreground font-bold text-base tracking-wide'>
-          SIGNAL
-        </span>
+      <div className='flex items-center justify-center mb-8'>
+        <SignalLogo iconSize={32} />
       </div>
-
       <div className='card-neural'>
         {step === 'register' ? (
           <>
@@ -201,6 +214,8 @@ export default function SignUpForm() {
                   </p>
                 )}
               </div>
+
+              <div id='clerk-captcha' />
 
               <button
                 type='submit'
