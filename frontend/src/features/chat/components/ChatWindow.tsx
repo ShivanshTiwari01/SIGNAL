@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import { useConversation } from '../hooks/useConversation';
+import SignalLogo from '@/components/common/SignalLogo';
 
 interface Props {
   conversationId: string | null;
@@ -19,16 +20,7 @@ export default function ChatWindow({ conversationId }: Props) {
   if (!conversationId) {
     return (
       <div className='flex-1 flex flex-col items-center justify-center gap-4 text-center px-6'>
-        <div className='w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center glow-blue'>
-          <svg width='28' height='28' viewBox='0 0 14 14' fill='none'>
-            <path
-              d='M7 1L13 4V10L7 13L1 10V4L7 1Z'
-              fill='currentColor'
-              className='text-primary'
-              fillOpacity='0.9'
-            />
-          </svg>
-        </div>
+        <SignalLogo iconSize={56} showWordmark={false} />
         <div>
           <p className='text-foreground font-semibold text-lg'>Signal AI</p>
           <p className='text-muted-foreground text-sm mt-1'>

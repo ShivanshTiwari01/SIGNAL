@@ -14,7 +14,7 @@ export const subscriptionPlans = {
   proTrader: {
     id: 'protrader',
     name: 'protrader',
-    price: 19900,
+    price: 19999,
     features: ['all'],
   },
 };

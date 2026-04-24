@@ -27,8 +27,12 @@ export function useSendMessage() {
 
   return useMutation({
     mutationFn: sendMessage,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      const conversationId = data?.data?.conversationId;
+      if (conversationId) {
+        queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+      }
     },
   });
 }

@@ -47,8 +47,8 @@ export default function ChatInput({
         onSuccess: (data: any) => {
           reset();
           setImage(null);
-          if (!conversationId && data?.conversationId) {
-            onConversationCreated(data.conversationId);
+          if (!conversationId && data?.data?.conversationId) {
+            onConversationCreated(data.data.conversationId);
           }
         },
         onError: () => toast.error('Failed to send message.'),
