@@ -187,18 +187,23 @@ CLOUDINARY_API_SECRET="..."
 STRIPE_SECRET_KEY="sk_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
 
+# CORS — set to your frontend origin
+FRONTEND_URL="http://localhost:3002"
+
 # App
 PORT=3001
 NODE_ENV=development
 ```
 
-**`frontend/.env.local`**
+**`frontend/.env.local`** (local development)
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:3001"
+NEXT_PUBLIC_API_URL="http://localhost:3001/api"
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
 CLERK_SECRET_KEY="sk_..."
 ```
+
+> **Note:** `NEXT_PUBLIC_*` variables are baked into the Next.js bundle at **build time**. For Docker, they are passed as build arguments (see root `.env` below) — updating them after the image is built has no effect without a rebuild.
 
 ---
 
@@ -211,8 +216,25 @@ The recommended way to run all services together:
 git clone https://github.com/ShivanshTiwari01/signal.git
 cd signal
 
-# Create both .env files (see Environment Variables above)
+# 1. Create backend/.env (see Environment Variables above)
+# 2. Create frontend/.env (for runtime Clerk config)
+# 3. Create a root .env for Docker build args and Postgres credentials:
+```
 
+**Root `.env`** (next to `docker-compose.yml`)
+
+```env
+# Postgres (used by docker-compose to provision the database)
+POSTGRES_USER=signal
+POSTGRES_PASSWORD=secret
+POSTGRES_DB=signal
+
+# Passed as build-time ARGs to the Next.js frontend image
+NEXT_PUBLIC_API_URL="https://api.yourdomain.com/api"
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
+```
+
+```bash
 # Build and start all services
 docker compose up --build
 
@@ -223,8 +245,10 @@ docker compose up --build -d
 Services will be available at:
 
 - Frontend: http://localhost:3002
-- Backend API: http://localhost:3001
+- Backend API: http://localhost:3001/api
 - Redis: localhost:6379
+
+> **Production:** Set `FRONTEND_URL` in `backend/.env` to your production frontend origin (e.g. `https://signal.yourdomain.com`) to allow CORS. Rebuild the frontend image whenever `NEXT_PUBLIC_*` values change.
 
 ---
 
