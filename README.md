@@ -26,14 +26,15 @@
 
 ## Overview
 
-**SIGNAL** delivers institutional-grade market intelligence to retail and professional traders through:
+**SIGNAL** is an AI-powered trading intelligence platform focused on the Indian stock market (NIFTY50):
 
-- **AI-generated trading signals** processed in real time across multiple asset classes
-- **Generative insights** powered by Google Gemini — natural language summaries of market conditions
-- **Personalized dashboards** curated per user strategy and risk profile
-- **Multi-tier subscriptions** (Free / Pro / Enterprise) with per-user usage tracking
-- **Secure authentication** via Clerk with webhook-driven user lifecycle management
-- **Stripe-integrated billing** for subscription and payment management
+- **AI trading assistant** powered by Google Gemini — analyses live NIFTY50 data and answers market questions conversationally
+- **Real-time stock data** for top NIFTY50 companies, cached in Redis and injected into every AI prompt
+- **Multi-turn conversations** with message history, image attachment support, and pagination
+- **Profile onboarding** flow after sign-up via Clerk webhook
+- **Multi-tier subscriptions** (Explorer / Trader / Pro Trader) powered by Razorpay with webhook-verified payments
+- **Secure authentication** via Clerk with Svix-verified webhook-driven user lifecycle management
+- **Usage tracking** per user with token counts, API cost, and request metrics
 
 ---
 
@@ -45,24 +46,24 @@
 │              Next.js 16 · React 19 · Tailwind 4         │
 │          Clerk Auth · Redux Toolkit · React Query       │
 └──────────────────────────┬──────────────────────────────┘
-                           │ HTTP (port 3002)
+                           │ HTTPS → api.signal.neuralenginez.in
 ┌──────────────────────────▼──────────────────────────────┐
 │                        Backend                          │
 │            Express 5 · TypeScript · Prisma 7            │
-│          Clerk Webhooks · Zod · Pino · Helmet           │
+│      Clerk Webhooks · Razorpay Webhooks · Zod · Pino    │
 └──────────┬────────────────────────────┬─────────────────┘
            │                            │
 ┌──────────▼──────────┐    ┌────────────▼────────────────┐
 │     PostgreSQL       │    │           Redis             │
-│   (Primary Store)    │    │       (Cache / Queue)       │
+│   (Primary Store)    │    │    (NIFTY50 stock cache)    │
 └──────────────────────┘    └─────────────────────────────┘
 ```
 
-| Service  | Port | Description             |
-| -------- | ---- | ----------------------- |
-| Frontend | 3002 | Next.js web application |
-| Backend  | 3001 | Express REST API        |
-| Redis    | 6379 | Cache & session store   |
+| Service  | Port | Description                      |
+| -------- | ---- | -------------------------------- |
+| Frontend | 3002 | Next.js web application          |
+| Backend  | 3001 | Express REST API (`/api` prefix) |
+| Redis    | 6379 | NIFTY50 stock data cache         |
 
 ---
 
@@ -70,21 +71,21 @@
 
 ### Backend
 
-| Category       | Technology                             |
-| -------------- | -------------------------------------- |
-| Runtime        | Node.js 24 (Alpine)                    |
-| Language       | TypeScript 5.9                         |
-| Framework      | Express 5                              |
-| ORM            | Prisma 7                               |
-| Database       | PostgreSQL (via `@prisma/adapter-pg`)  |
-| Cache          | Redis (ioredis)                        |
-| Authentication | Clerk + Svix webhooks                  |
-| AI             | Google Generative AI (`@google/genai`) |
-| File Storage   | Cloudinary + Multer                    |
-| Payments       | Stripe                                 |
-| Validation     | Zod 4                                  |
-| Logging        | Pino + pino-pretty                     |
-| Security       | Helmet, CORS, express-rate-limit       |
+| Category       | Technology                          |
+| -------------- | ----------------------------------- |
+| Runtime        | Node.js 24 (Alpine)                 |
+| Language       | TypeScript 5.9                      |
+| Framework      | Express 5                           |
+| ORM            | Prisma 7 (`@prisma/adapter-pg`)     |
+| Database       | PostgreSQL 16                       |
+| Cache          | Redis 7 (ioredis)                   |
+| Authentication | Clerk (`@clerk/express`) + Svix     |
+| AI             | Google Gemini (`@google/genai`)     |
+| File Storage   | Cloudinary + Multer                 |
+| Payments       | Razorpay (subscriptions + webhooks) |
+| Validation     | Zod 4                               |
+| Logging        | Pino + pino-pretty                  |
+| Security       | Helmet, CORS, express-rate-limit    |
 
 ### Frontend
 
@@ -94,11 +95,11 @@
 | Language       | TypeScript 5                   |
 | UI             | React 19 (with React Compiler) |
 | Styling        | Tailwind CSS 4                 |
-| Authentication | Clerk                          |
+| Authentication | Clerk (`@clerk/nextjs`)        |
 | Server State   | TanStack React Query 5         |
 | Client State   | Redux Toolkit + React-Redux    |
 | Forms          | React Hook Form + Zod 4        |
-| HTTP Client    | Axios                          |
+| HTTP Client    | Axios (configured instance)    |
 | Icons          | Lucide React                   |
 | Theming        | next-themes                    |
 | Notifications  | Sonner                         |
@@ -110,37 +111,49 @@
 ```
 SIGNAL/
 ├── docker-compose.yml
+├── .env                          # Root env: Postgres credentials + Docker build ARGs
 ├── backend/
 │   ├── src/
-│   │   ├── app.ts               # Express app setup
-│   │   ├── index.ts             # Server entry point
-│   │   ├── routes.ts            # Root router
+│   │   ├── app.ts                # Express app setup (CORS, Helmet, rate limiting)
+│   │   ├── index.ts              # Server entry point
+│   │   ├── routes.ts             # Root router (/auth, /chat, /subs)
 │   │   ├── api/
-│   │   │   ├── auth/            # Auth controller, routes, validation
-│   │   │   └── chat/            # Chat/conversation controller, routes
+│   │   │   ├── auth/             # Clerk webhook handler, complete-profile
+│   │   │   ├── chat/             # AI conversation controller, routes, validation
+│   │   │   └── subscription/     # Razorpay plan, subscription, payment, webhook
 │   │   ├── config/
-│   │   │   ├── db.ts            # Prisma client
-│   │   │   └── redis.ts         # Redis client
-│   │   ├── helpers/             # Cloudinary, pagination utilities
-│   │   ├── middleware/          # Request validation middleware
-│   │   └── services/            # External service wrappers
+│   │   │   ├── db.ts             # Prisma client
+│   │   │   ├── redis.ts          # Redis client
+│   │   │   └── razorpay.ts       # Razorpay client
+│   │   ├── constants/
+│   │   │   ├── nifty.ts          # Top NIFTY50 company symbols
+│   │   │   └── subscriptionPlans.ts  # Plan definitions (Explorer/Trader/ProTrader)
+│   │   ├── helpers/              # Cloudinary upload, pagination utilities
+│   │   ├── middleware/           # Zod request validation middleware
+│   │   └── services/             # External service wrappers
 │   ├── prisma/
-│   │   ├── schema.prisma        # Database schema
-│   │   └── migrations/          # Migration history
+│   │   ├── schema.prisma         # Database schema
+│   │   └── migrations/           # Migration history
 │   └── package.json
 └── frontend/
     ├── src/
-    │   ├── app/                  # Next.js App Router pages
-    │   │   ├── (auth)/           # Authentication routes (Clerk)
-    │   │   └── (landing)/        # Public marketing pages
-    │   ├── components/           # Shared UI components
-    │   ├── features/             # Feature-based modules
-    │   │   ├── auth/             # Auth components, hooks, types
-    │   │   └── landing/          # Landing page components
-    │   ├── store/                # Redux store + slices
-    │   ├── hooks/                # Shared custom hooks
-    │   ├── lib/                  # Axios, React Query, utilities
-    │   └── providers/            # App-level providers
+    │   ├── app/                   # Next.js App Router pages
+    │   │   ├── (auth)/            # Sign-in / Sign-up (Clerk)
+    │   │   ├── (chat)/            # Protected chat UI with sidebar
+    │   │   ├── (landing)/         # Public marketing page
+    │   │   └── (onboarding)/      # Complete-profile onboarding flow
+    │   ├── components/
+    │   │   ├── common/            # Shared primitive components
+    │   │   └── ui/                # UI component library
+    │   ├── features/
+    │   │   ├── auth/              # Auth components, hooks, types
+    │   │   ├── chat/              # Chat window, sidebar, message bubbles, input
+    │   │   └── landing/           # Landing page sections
+    │   ├── store/                 # Redux store + authSlice
+    │   ├── hooks/                 # Shared custom hooks (useAuthToken)
+    │   ├── lib/                   # Axios instance, React Query client, utils
+    │   ├── providers/             # App-level providers (React Query, Redux, Clerk)
+    │   └── types/                 # Shared TypeScript types
     └── package.json
 ```
 
@@ -183,9 +196,10 @@ CLOUDINARY_CLOUD_NAME="..."
 CLOUDINARY_API_KEY="..."
 CLOUDINARY_API_SECRET="..."
 
-# Stripe
-STRIPE_SECRET_KEY="sk_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
+# Razorpay
+RAZORPAY_KEY_ID="rzp_..."
+RAZORPAY_KEY_SECRET="..."
+RAZORPAY_WEBHOOK_SECRET="..."
 
 # CORS — set to your frontend origin
 FRONTEND_URL="http://localhost:3002"
@@ -292,12 +306,31 @@ The frontend runs at http://localhost:3002 and the backend at http://localhost:3
 
 Base URL: `http://localhost:3001/api`
 
-| Module | Prefix      | Description                             |
-| ------ | ----------- | --------------------------------------- |
-| Auth   | `/api/auth` | User registration, webhooks, profile    |
-| Chat   | `/api/chat` | Conversations, messages, AI completions |
+### Auth (`/api/auth`)
 
-Refer to [`backend/README.md`](backend/README.md) for the full API reference including request/response schemas.
+| Method | Endpoint                 | Auth     | Description                                    |
+| ------ | ------------------------ | -------- | ---------------------------------------------- |
+| POST   | `/auth/signup`           | Webhook  | Clerk `user.created` webhook — creates DB user |
+| PATCH  | `/auth/complete-profile` | Required | Update user profile after onboarding           |
+
+### Chat (`/api/chat`)
+
+| Method | Endpoint                             | Auth     | Description                                       |
+| ------ | ------------------------------------ | -------- | ------------------------------------------------- |
+| POST   | `/chat/conversation`                 | Required | Send message + optional image; get AI reply       |
+| GET    | `/chat/conversations`                | Required | List all conversations for the authenticated user |
+| GET    | `/chat/conversation/:conversationId` | Required | Fetch paginated messages for a conversation       |
+
+> The `POST /chat/conversation` endpoint fetches live NIFTY50 stock data (cached in Redis), builds a Gemini prompt with market context and conversation history, and returns the AI response.
+
+### Subscriptions (`/api/subs`)
+
+| Method | Endpoint                     | Auth     | Description                                   |
+| ------ | ---------------------------- | -------- | --------------------------------------------- |
+| POST   | `/subs/create-plan`          | Public   | Create a Razorpay plan (admin utility)        |
+| POST   | `/subs/subscription-create`  | Required | Create a Razorpay subscription for a user     |
+| POST   | `/subs/verify-payment`       | Public   | Verify Razorpay payment signature             |
+| POST   | `/subs/subscription-webhook` | Webhook  | Razorpay webhook — update subscription status |
 
 ---
 
@@ -307,17 +340,22 @@ Key models and relationships:
 
 ```
 User
- ├── UserProfile       (1:1)
- ├── Session[]         (1:N)
- ├── Conversations[]   (1:N)
- │    └── Messages[]   (1:N)
- │         ├── MessageMetadata[]  (1:N)
- │         └── Attachment[]       (1:N)
- ├── Subscription[]    (1:N)
- ├── Payment[]         (1:N)
- ├── ApiUsage[]        (1:N)
- └── Usage[]           (1:N)
+ ├── UserProfile        (1:1)  — firstName, lastName, bio, avatar, dob
+ ├── Conversations[]    (1:N)  — title, model, systemPrompt
+ │    ├── Messages[]    (1:N)  — role (user|ai), content, tokenCount
+ │    │    ├── MessageMetadata[]  (1:N) — latencyMs, modelUsed, tokens
+ │    │    └── Attachment[]       (1:N) — fileName, fileType, fileUrl
+ │    └── ApiUsage[]    (1:N)  — model, tokensUsed, cost
+ ├── Subscription[]     (1:N)  — razorpay subscriptionId, status, period
+ ├── Payment[]          (1:N)  — razorpay_payment_id, amount, currency, status
+ └── Usage[]            (1:N)  — date, requestsCount, tokensUsed, cost
 ```
+
+**Enums:**
+
+- `Plan`: `FREE` | `TRADER` | `PROTRADER`
+- `Status`: `Active` | `Inactive` | `Canceled` | `PastDue`
+- `PaymentStatus`: `Pending` | `Succeeded` | `Failed` | `Canceled`
 
 Run `pnpm prisma:studio` inside `backend/` to open Prisma Studio and browse data visually.
 
@@ -325,17 +363,17 @@ Run `pnpm prisma:studio` inside `backend/` to open Prisma Studio and browse data
 
 ## Subscription Plans
 
-| Feature            | Free     | Pro       | Enterprise |
-| ------------------ | -------- | --------- | ---------- |
-| Signals per day    | 5        | Unlimited | Unlimited  |
-| Asset classes      | 1        | All       | All        |
-| Data latency       | Delayed  | Real-time | Real-time  |
-| AI advisor         | —        | ✓         | ✓          |
-| Priority alerts    | —        | ✓         | ✓          |
-| API access         | —        | ✓         | ✓          |
-| White-label        | —        | —         | ✓          |
-| Dedicated AI model | —        | —         | ✓          |
-| Price              | $0/month | $49/month | Custom     |
+Plans are managed via Razorpay. The `Plan` enum on the `User` model is updated after payment verification.
+
+| Feature              | Explorer (Free) | Trader    | Pro Trader |
+| -------------------- | --------------- | --------- | ---------- |
+| AI conversations     | Limited         | Unlimited | Unlimited  |
+| NIFTY50 market data  | ✓               | ✓         | ✓          |
+| Image attachments    | ✓               | ✓         | ✓          |
+| Conversation history | ✓               | ✓         | ✓          |
+| Priority support     | —               | ✓         | ✓          |
+| Advanced analytics   | —               | ✓         | ✓          |
+| Price (INR/month)    | ₹0              | ₹1,999    | ₹19,999    |
 
 ---
 

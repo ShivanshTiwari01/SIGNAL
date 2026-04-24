@@ -75,7 +75,7 @@ git push origin feat/your-feature-name
 | `refactor/<scope>` | Code restructuring without behavior changes |
 | `docs/<scope>`     | Documentation-only changes                  |
 
-Branch names must be lowercase and hyphen-separated. Example: `feat/stripe-webhook-handler`.
+Branch names must be lowercase and hyphen-separated. Example: `feat/razorpay-webhook-handler`.
 
 ---
 
