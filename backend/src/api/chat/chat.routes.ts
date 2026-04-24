@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import { requireAuth } from '@clerk/express';
 import * as controller from './chat.controller';
 import validate from '../../middleware/validate';
 import { ConversationSchema } from './chat.validation';
@@ -19,13 +20,18 @@ const upload = multer({
 
 router.post(
   '/conversation',
+  requireAuth(),
   upload.single('image'),
   validate(ConversationSchema),
   controller.conversation,
 );
 
-router.get('/conversation/:conversationId', controller.fetchConversation);
+router.get(
+  '/conversation/:conversationId',
+  requireAuth(),
+  controller.fetchConversation,
+);
 
-router.get('/conversations', controller.fetchConversations);
+router.get('/conversations', requireAuth(), controller.fetchConversations);
 
 export default router;
