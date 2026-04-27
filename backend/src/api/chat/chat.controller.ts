@@ -18,24 +18,26 @@ const attachment = prisma.attachment;
 
 export const conversation = async (req: Request, res: Response) => {
   try {
-    console.log('hitting api');
     const { conversationId } = req.query;
     const { text } = req.body;
 
     const { userId: clerkUserId } = getAuth(req);
+
     if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const dbUser = await user.findUnique({
+    const userExists = await user.findUnique({
       where: { userClerkId: clerkUserId },
     });
-    if (!dbUser) {
+
+    if (!userExists) {
       return res
         .status(404)
         .json({ success: false, message: 'User not found' });
     }
-    const userId = dbUser.id;
+
+    const userId = userExists.id;
 
     if (!text) {
       return res.status(400).json({
@@ -49,10 +51,10 @@ export const conversation = async (req: Request, res: Response) => {
     console.log('conversation id ', conversationId);
     console.log('type of conversation id ', typeof conversationId);
 
-    if (conversationId && typeof conversationId === 'string') {
+    if (conversationId) {
       conversation = await conversations.findUnique({
         where: {
-          id: conversationId,
+          id: conversationId as string,
         },
       });
     } else {
@@ -100,7 +102,7 @@ export const conversation = async (req: Request, res: Response) => {
     if (cachedStockData) {
       stockData = JSON.parse(cachedStockData);
 
-      console.log('Stock data fetched from cache');
+      console.log('Stock data fetched from cache', stockData);
     } else {
       for (const symbol of topCompanies) {
         const data: any = await fetchTimeSeriesDaily(symbol);
@@ -111,6 +113,8 @@ export const conversation = async (req: Request, res: Response) => {
 
         await new Promise((r) => setTimeout(r, 2000));
       }
+
+      console.log('Stock data fetched from api', stockData);
 
       await redisClient.set('stockData', JSON.stringify(stockData));
     }
@@ -178,6 +182,7 @@ export const conversation = async (req: Request, res: Response) => {
 export const fetchConversation = async (req: Request, res: Response) => {
   try {
     const { conversationId } = req.params;
+
     const page = parseInt((req.query.page as string) ?? '1', 10);
     const pageSize = parseInt((req.query.pageSize as string) ?? '20', 10);
 
@@ -236,13 +241,16 @@ export const fetchConversation = async (req: Request, res: Response) => {
 export const fetchConversations = async (req: Request, res: Response) => {
   try {
     const { userId: clerkUserId } = getAuth(req);
+
     if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    const dbUser = await user.findUnique({
+
+    const userExists = await user.findUnique({
       where: { userClerkId: clerkUserId },
     });
-    if (!dbUser) {
+
+    if (!userExists) {
       return res
         .status(404)
         .json({ success: false, message: 'User not found' });
@@ -250,7 +258,7 @@ export const fetchConversations = async (req: Request, res: Response) => {
 
     const conversationsList = await conversations.findMany({
       where: {
-        userId: dbUser.id,
+        userId: userExists.id,
       },
       orderBy: { createdAt: 'desc' },
       select: {
