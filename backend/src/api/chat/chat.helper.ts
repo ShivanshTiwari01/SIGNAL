@@ -44,7 +44,7 @@ export const generateContent = async (
 
     return response;
   } catch (error) {
-    logger.error(error, 'AI API call error');
+    logger.error({ 'AI API call error': error });
     return null;
   }
 };
@@ -86,6 +86,8 @@ export const fetchTimeSeriesDaily = async (symbol: string) => {
   }
 };
 
+// the Simple Moving Average (SMA) smooths
+// price data to reveal the underlying trend direction
 export const calculateSMA = (data: Candle[], period: number) => {
   if (data.length < period) return null;
 
@@ -95,6 +97,8 @@ export const calculateSMA = (data: Candle[], period: number) => {
   return sum / period;
 };
 
+// Relative Strength Index (RSI) measures the speed and
+// magnitude of recent price changes to identify momentum
 export const calculateRSI = (data: Candle[], period: number = 14) => {
   if (data.length < period) return null;
 
