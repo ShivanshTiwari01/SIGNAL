@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +10,7 @@ import api from '@/store/axios';
 import { completeProfileSchema } from '../constants';
 import type { CompleteProfileFormValues } from '../types';
 import SignalLogo from '@/components/common/SignalLogo';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 async function completeProfileRequest(data: CompleteProfileFormValues) {
   const res = await api.patch('/auth/complete-profile', data);

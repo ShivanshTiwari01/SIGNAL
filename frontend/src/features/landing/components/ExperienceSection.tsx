@@ -3,6 +3,19 @@
 const bullets = [
   'AI detects market anomalies 10x faster than human analysts',
   'Context-aware alerts — only what matters, when it matters',
+  'Continuous learning model that adapts to changing market regimes',
+];
+
+const stats = [
+  { label: 'Win Rate', value: '73%', delta: '+4.2%', up: true },
+  { label: 'Avg. Return', value: '2.4x', delta: '+0.3x', up: true },
+  { label: 'Active Signals', value: '12', delta: 'Live', up: null },
+];
+
+const activities = [
+  { symbol: 'RELIANCE', signal: 'BUY', confidence: 87, time: '2m ago' },
+  { symbol: 'TCS', signal: 'HOLD', confidence: 64, time: '5m ago' },
+  { symbol: 'HDFC', signal: 'SELL', confidence: 78, time: '11m ago' },
 ];
 
 export default function ExperienceSection() {
@@ -48,24 +61,25 @@ export default function ExperienceSection() {
           </ul>
         </div>
 
-        {/* Right — mock dashboard card */}
+        {/* Right — enhanced dashboard card */}
         <div className='flex-1 w-full'>
           <div className='card-neural relative overflow-hidden glow-blue'>
             {/* Header */}
-            <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-center justify-between mb-5'>
               <div>
                 <p className='text-foreground font-semibold text-sm'>
                   Portfolio Performance
                 </p>
                 <p className='text-primary text-xs mt-0.5'>+18.4% this month</p>
               </div>
-              <span className='text-xs font-medium text-success bg-success/10 border border-success/20 px-2.5 py-1 rounded-sm'>
+              <span className='text-xs font-medium text-growth bg-growth/10 border border-growth/20 px-2.5 py-1 rounded-sm flex items-center gap-1'>
+                <span className='w-1.5 h-1.5 rounded-full bg-growth animate-pulse' />
                 Live
               </span>
             </div>
 
             {/* Sparkline */}
-            <div className='relative h-28 mb-4'>
+            <div className='relative h-28 mb-5'>
               <svg
                 viewBox='0 0 300 100'
                 className='w-full h-full'
@@ -76,7 +90,7 @@ export default function ExperienceSection() {
                     <stop
                       offset='0%'
                       stopColor='hsl(var(--chart-line))'
-                      stopOpacity='0.3'
+                      stopOpacity='0.35'
                     />
                     <stop
                       offset='100%'
@@ -89,32 +103,84 @@ export default function ExperienceSection() {
                   d='M0,80 C30,70 50,85 80,60 C110,35 130,70 160,45 C190,20 210,55 240,30 C270,10 280,20 300,15'
                   fill='none'
                   stroke='hsl(var(--chart-line))'
-                  strokeWidth='2'
+                  strokeWidth='2.5'
                 />
                 <path
                   d='M0,80 C30,70 50,85 80,60 C110,35 130,70 160,45 C190,20 210,55 240,30 C270,10 280,20 300,15 L300,100 L0,100 Z'
                   fill='url(#sparkGrad)'
                 />
+                {/* Marker dot */}
+                <circle
+                  cx='300'
+                  cy='15'
+                  r='3.5'
+                  fill='hsl(var(--chart-line))'
+                  opacity='0.9'
+                />
               </svg>
             </div>
 
             {/* Stats row */}
-            <div className='grid grid-cols-3 gap-3'>
-              {[
-                { label: 'Win Rate', value: '73%' },
-                { label: 'Avg. Return', value: '2.4x' },
-                { label: 'Active Signals', value: '12' },
-              ].map((s) => (
+            <div className='grid grid-cols-3 gap-3 mb-5'>
+              {stats.map((s) => (
                 <div
                   key={s.label}
-                  className='bg-secondary rounded-md p-3 text-center'
+                  className='bg-secondary/70 rounded-md p-3 text-center border border-white/5'
                 >
-                  <p className='text-foreground font-bold text-lg'>{s.value}</p>
+                  <p className='text-foreground font-bold text-xl'>{s.value}</p>
                   <p className='text-muted-foreground text-xs mt-0.5'>
                     {s.label}
                   </p>
+                  <p
+                    className={`text-xs font-medium mt-1 ${s.up === null ? 'text-primary' : s.up ? 'text-growth' : 'text-loss'}`}
+                  >
+                    {s.delta}
+                  </p>
                 </div>
               ))}
+            </div>
+
+            {/* Live signals feed */}
+            <div className='border-t border-border/50 pt-4'>
+              <p className='text-muted-foreground/50 text-[10px] font-semibold uppercase tracking-wider mb-3'>
+                Recent Signals
+              </p>
+              <div className='space-y-2'>
+                {activities.map((a) => (
+                  <div key={a.symbol} className='flex items-center gap-3'>
+                    <div className='w-16 shrink-0'>
+                      <span
+                        className={`text-xs font-semibold px-1.5 py-0.5 rounded-sm ${
+                          a.signal === 'BUY'
+                            ? 'bg-growth/15 text-growth'
+                            : a.signal === 'SELL'
+                              ? 'bg-loss/15 text-loss'
+                              : 'bg-primary/10 text-primary'
+                        }`}
+                      >
+                        {a.signal}
+                      </span>
+                    </div>
+                    <span className='text-foreground text-xs font-semibold flex-1'>
+                      {a.symbol}
+                    </span>
+                    <div className='flex items-center gap-1.5'>
+                      <div className='w-16 h-1.5 rounded-full bg-secondary overflow-hidden'>
+                        <div
+                          className='h-full rounded-full bg-primary/60'
+                          style={{ width: `${a.confidence}%` }}
+                        />
+                      </div>
+                      <span className='text-muted-foreground/50 text-xs tabular-nums'>
+                        {a.confidence}%
+                      </span>
+                    </div>
+                    <span className='text-muted-foreground/40 text-xs'>
+                      {a.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Glow overlay */}

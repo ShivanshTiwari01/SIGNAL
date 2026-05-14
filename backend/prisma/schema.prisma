@@ -139,6 +139,7 @@ model Messages {
   id             String   @id @default(uuid())
   conversationId String
   role           String
+  model          String?
   content        String
   tokenCount     Int
   createdAt      DateTime @default(now())

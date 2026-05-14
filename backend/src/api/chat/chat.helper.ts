@@ -3,6 +3,10 @@ import { logger } from '../../app';
 
 const ai = new GoogleGenAI({});
 
+const AI_MODEL = 'gemini-2.5-flash-preview-04-17';
+
+export { AI_MODEL };
+
 interface Candle {
   date: string;
   open: number;
@@ -12,21 +16,16 @@ interface Candle {
   volume: number;
 }
 
-export const generateContent = async (
+function buildContents(
   prompt: string,
   history?: { role: string; content: string }[],
   image?: string,
   mimeType?: string,
-) => {
-  let response: any = null;
-  let contents: any = [];
-
-  if (history) {
-    contents = (history || []).map((msg) => ({
-      role: msg.role === 'ai' ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    }));
-  }
+) {
+  const contents: any[] = (history ?? []).map((msg) => ({
+    role: msg.role === 'ai' ? 'model' : 'user',
+    parts: [{ text: msg.content }],
+  }));
 
   contents.push({
     parts: image
@@ -34,19 +33,48 @@ export const generateContent = async (
       : [{ text: prompt }],
   });
 
+  return contents;
+}
+
+export const generateContent = async (
+  prompt: string,
+  history?: { role: string; content: string }[],
+  image?: string,
+  mimeType?: string,
+) => {
+  const contents = buildContents(prompt, history, image, mimeType);
+
   try {
-    response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+    const response = await ai.models.generateContent({
+      model: AI_MODEL,
       contents,
     });
-
-    console.log('AI Response: ', response);
 
     return response;
   } catch (error) {
     logger.error({ 'AI API call error': error });
     return null;
   }
+};
+
+/**
+ * Returns an async-iterable stream of GenerateContentResponse chunks.
+ * Callers are responsible for reading the stream and handling errors.
+ */
+export const generateContentStream = async (
+  prompt: string,
+  history?: { role: string; content: string }[],
+  image?: string,
+  mimeType?: string,
+) => {
+  const contents = buildContents(prompt, history, image, mimeType);
+
+  const stream = await ai.models.generateContentStream({
+    model: AI_MODEL,
+    contents,
+  });
+
+  return stream;
 };
 
 export const fetchTimeSeriesDaily = async (symbol: string) => {

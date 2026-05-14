@@ -8,7 +8,13 @@ import {
   analyzeStock,
   fetchTimeSeriesDaily,
   generateContent,
+  generateContentStream,
+  AI_MODEL,
 } from './chat.helper';
+import {
+  buildSignalSystemPrompt,
+  SIGNAL_FALLBACK_PROMPT,
+} from '../../config/prompts';
 import { topCompanies } from '../../constants/nifty';
 
 const user = prisma.user;
@@ -131,24 +137,12 @@ export const conversation = async (req: Request, res: Response) => {
       },
     });
 
-    const systemContext = `
-      You are Signal AI, a professional trading intelligence assistant specialising in the Indian stock market (NIFTY50).
+    const systemPrompt =
+      stockData.length > 0
+        ? buildSignalSystemPrompt(stockData)
+        : SIGNAL_FALLBACK_PROMPT;
 
-      You always have access to the latest real-time market data for the top NIFTY50 stocks listed below. Use this data to ground every response — whether the user asks for stock picks, analysis, trend explanations, risk assessment, or general market questions.
-
-      Current Market Data (NIFTY50):
-      ${JSON.stringify(stockData, null, 2)}
-
-      Guidelines:
-      - Always reference the provided stock data when relevant
-      - Be decisive and actionable — avoid vague or generic answers
-      - Keep responses concise and trader-friendly
-      - If the user asks what to buy, rank your top picks clearly with reasoning
-      - If the user asks about a specific stock, analyse it using the data above
-      - For general market questions, use the overall data to give context
-      `;
-
-    const prompt = `${systemContext}\n\nUser: ${text}`;
+    const prompt = `${systemPrompt}\n\nUser: ${text}`;
 
     const aiReply: any = await generateContent(
       prompt,
@@ -157,12 +151,20 @@ export const conversation = async (req: Request, res: Response) => {
       req.file?.mimetype,
     );
 
+    if (!aiReply) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI service temporarily unavailable. Please try again.',
+      });
+    }
+
     await messages.create({
       data: {
         content: aiReply.text,
         role: 'ai',
+        model: AI_MODEL,
         conversationId: conversation.id,
-        tokenCount: aiReply.text.length,
+        tokenCount: aiReply.text?.length ?? 0,
       },
     });
 
@@ -284,5 +286,174 @@ export const fetchConversations = async (req: Request, res: Response) => {
       success: false,
       message: 'Internal Server Error',
     });
+  }
+};
+
+async function resolveStockData(): Promise<any[]> {
+  const cached = await redisClient.get('stockData');
+  if (cached) return JSON.parse(cached);
+
+  const stockData: any[] = [];
+  for (const symbol of topCompanies) {
+    const data: any = await fetchTimeSeriesDaily(symbol);
+    const analysis = analyzeStock(data, symbol);
+    if (analysis) stockData.push(analysis);
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  await redisClient.set('stockData', JSON.stringify(stockData));
+  return stockData;
+}
+
+export const conversationStream = async (req: Request, res: Response) => {
+  const { conversationId } = req.query;
+  const { text } = req.body;
+  const { userId: clerkUserId } = getAuth(req);
+
+  if (!clerkUserId) {
+    res.status(401).json({ success: false, message: 'Unauthorized' });
+    return;
+  }
+
+  const userExists = await user.findUnique({
+    where: { userClerkId: clerkUserId },
+  });
+  if (!userExists) {
+    res.status(404).json({ success: false, message: 'User not found' });
+    return;
+  }
+
+  if (!text) {
+    res.status(400).json({ success: false, message: 'text is required' });
+    return;
+  }
+
+  // Set up SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const sendEvent = (data: object) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    const userId = userExists.id;
+
+    let conv: any = null;
+
+    if (conversationId) {
+      conv = await conversations.findUnique({
+        where: { id: conversationId as string },
+      });
+    } else {
+      conv = await conversations.create({
+        data: { title: 'New Conversation', userId, model: AI_MODEL },
+      });
+    }
+
+    const userMessage = await messages.create({
+      data: {
+        content: text,
+        role: 'user',
+        conversationId: conv.id,
+        tokenCount: text.length,
+      },
+    });
+
+    // Handle optional image
+    let base64Image: string | undefined;
+
+    if (req.file) {
+      const uploadedUrl = await uploadImageToCloudinary(req.file);
+      base64Image = req.file.buffer.toString('base64');
+      await attachment.create({
+        data: {
+          messageId: userMessage.id,
+          fileName: req.file.originalname,
+          fileType: req.file.mimetype,
+          fileSize: req.file.size,
+          fileUrl: uploadedUrl || '',
+        },
+      });
+    }
+
+    const stockData = await resolveStockData();
+
+    const recentMessages = await messages.findMany({
+      where: { conversationId: conv.id },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+      select: { role: true, content: true },
+    });
+
+    const systemPrompt =
+      stockData.length > 0
+        ? buildSignalSystemPrompt(stockData)
+        : SIGNAL_FALLBACK_PROMPT;
+
+    const prompt = `${systemPrompt}\n\nUser: ${text}`;
+
+    const stream = await generateContentStream(
+      prompt,
+      recentMessages,
+      base64Image,
+      req.file?.mimetype,
+    );
+
+    let fullContent = '';
+
+    for await (const chunk of stream) {
+      const token = chunk.text ?? '';
+      if (token) {
+        fullContent += token;
+        sendEvent({ token });
+      }
+    }
+
+    // Persist the complete AI response
+    await messages.create({
+      data: {
+        content: fullContent,
+        role: 'ai',
+        model: AI_MODEL,
+        conversationId: conv.id,
+        tokenCount: fullContent.length,
+      },
+    });
+
+    sendEvent({ done: true, conversationId: conv.id });
+    res.end();
+  } catch (error) {
+    logger.error(error, 'Error in conversationStream handler');
+    sendEvent({ error: 'An error occurred while generating the response.' });
+    res.end();
+  }
+};
+
+export const marketTicker = async (req: Request, res: Response) => {
+  try {
+    const cached = await redisClient.get('stockData');
+
+    if (!cached) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const stocks: any[] = JSON.parse(cached);
+
+    const ticker = stocks.map((s) => ({
+      symbol: s.symbol,
+      price: s.price,
+      change: s.priceChange,
+      trend: s.trend,
+    }));
+
+    return res.status(200).json({ success: true, data: ticker });
+  } catch (error) {
+    logger.error(error, 'Error in marketTicker handler');
+    return res
+      .status(500)
+      .json({ success: false, message: 'Internal Server Error' });
   }
 };

@@ -14,6 +14,7 @@ export interface Message {
   id: string;
   content: string;
   role: 'user' | 'ai';
+  model?: string | null;
   conversationId: string;
   tokenCount: number;
   createdAt: string;
