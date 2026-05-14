@@ -15,11 +15,13 @@ export default function ConversationItem({
   return (
     <button
       onClick={() => onClick(conversation.id)}
-      className={`w-full text-left truncate text-sm ${
-        isActive ? 'sidebar-item-active' : 'sidebar-item-inactive'
+      className={`w-full text-left text-sm flex items-center gap-2.5 px-3 py-2 rounded-md transition-all ${
+        isActive
+          ? 'bg-primary/10 text-primary border border-primary/20'
+          : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
       }`}
     >
-      <MessageSquare size={14} className='shrink-0' />
+      <MessageSquare size={13} className='shrink-0' />
       <span className='truncate'>{conversation.title}</span>
     </button>
   );

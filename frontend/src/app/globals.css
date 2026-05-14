@@ -184,3 +184,13 @@
 .chart-tooltip {
   @apply bg-[#0b1326] border border-white/10 rounded p-2 text-xs shadow-2xl;
 }
+
+/* Ticker strip scroll animation */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

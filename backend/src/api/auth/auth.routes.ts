@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post('/signup', controller.signup);
 
+router.get('/me', requireAuth(), controller.getMe);
+
 router.patch(
   '/complete-profile',
   requireAuth(),

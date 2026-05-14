@@ -83,6 +83,38 @@ export const signup = async (req: Request, res: Response) => {
   }
 };
 
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const { userId } = getAuth(req);
+
+    const userExists = await user.findFirst({
+      where: { userClerkId: userId as string },
+      include: { userProfile: true },
+    });
+
+    if (!userExists) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        email: userExists.email,
+        username: userExists.username,
+        mobile: userExists.mobile,
+        plan: userExists.plan,
+        profile: userExists.userProfile,
+      },
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: 'Internal server error' });
+  }
+};
+
 export const completeProfile = async (req: Request, res: Response) => {
   try {
     const { bio, dob, mobile } = req.body;

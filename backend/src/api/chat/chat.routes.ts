@@ -26,6 +26,14 @@ router.post(
   controller.conversation,
 );
 
+router.post(
+  '/conversation/stream',
+  requireAuth(),
+  upload.single('image'),
+  validate(ConversationSchema),
+  controller.conversationStream,
+);
+
 router.get(
   '/conversation/:conversationId',
   requireAuth(),
@@ -33,5 +41,7 @@ router.get(
 );
 
 router.get('/conversations', requireAuth(), controller.fetchConversations);
+
+router.get('/market/ticker', requireAuth(), controller.marketTicker);
 
 export default router;
