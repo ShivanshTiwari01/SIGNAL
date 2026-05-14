@@ -3,7 +3,7 @@ import { logger } from '../../app';
 
 const ai = new GoogleGenAI({});
 
-const AI_MODEL = 'gemini-2.5-flash-preview-04-17';
+const AI_MODEL = 'gemini-3-flash-preview';
 
 export { AI_MODEL };
 
