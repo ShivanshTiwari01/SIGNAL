@@ -16,15 +16,19 @@ jobs:
       - name: Deploy via ssh
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.MY_VPS_IP }}
-          username: ${{ secrets.MY_VPS_USER}}
-          password: ${{ secrets.MY_VPS_PASSWORD}}
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER}}
+          password: ${{ secrets.VPS_PRIVATE_KEY}}
           script: |
-            cd ~/projects/SIGNAL
+            cd ~/projects/signal
 
             echo "Pull latest code"
-            git fetch origin
-            git reset --hard origin/production
+            if [ ! -d .git ]; then
+              git clone https://github.com/ShivanshTiwari01/portfolio.git .
+            else
+              git fetch origin
+              git reset --hard origin/production
+            fi
 
             echo "Rebuild containers"
             docker compose down
